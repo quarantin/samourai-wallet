@@ -9,19 +9,30 @@
 #define SALTED "Salted__"
 
 #define ITERATIONS 15000
+// #define ITERATIONS 1
+
+#define DERIVED_LEN 48
+// #define DERIVED_LEN 32
+
+
+void hexdump(uint8_t *data, size_t size) {
+	for (int i = 0; i < size; i++)
+		printf("%02x ", data[i]);
+}
 
 
 void derive_key(const char *passphrase, const uint8_t *salt, int iterations, uint8_t *key, uint8_t *iv) {
 
-	uint8_t derived[48];
+	uint8_t derived[DERIVED_LEN];
 
-	if (!PKCS5_PBKDF2_HMAC(passphrase, strlen(passphrase), salt, 8, iterations, EVP_sha256(), 48, derived)) {
+	if (!PKCS5_PBKDF2_HMAC(passphrase, strlen(passphrase), salt, 8, iterations, EVP_sha256(), DERIVED_LEN, derived)) {
 		fprintf(stderr, "Key derivation failed.\n");
 		exit(1);
 	}
 
 	memcpy(key, derived, 32);
 	memcpy(iv, derived + 32, 16);
+	// memcpy(iv, derived, 16);
 }
 
 
@@ -71,6 +82,13 @@ int main(int argc, char **argv) {
 		exit(1);
 	}
 
+	printf("SALT\n");
+	hexdump(salt, 8);
+	printf("\n");
+	printf("ENCRYPTED\n");
+	hexdump(expected_ciphertext, 16);
+	printf("\n");
+
 	bool success = false;
 	uint8_t key[32], iv[16], ciphertext[16], plaintext[16] = "{\"wallet\":{\"test";
 
@@ -81,6 +99,12 @@ int main(int argc, char **argv) {
 			passphrase[len - 1] = 0;
 
 		derive_key(passphrase, salt, ITERATIONS, key, iv);
+		printf("KEY\n");
+		hexdump(key, 32);
+		printf("\n");
+		printf("IV\n");
+		hexdump(iv, 16);
+		printf("\n");
 		aes_encrypt_first_block(key, iv, plaintext, ciphertext);
 
 		if (!memcmp(ciphertext, expected_ciphertext, sizeof(expected_ciphertext))) {
