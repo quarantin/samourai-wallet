@@ -60,8 +60,9 @@ def aes_encrypt(key, iv, plaintext):
     return ciphertext
 
 # Example usage
-salt = b"mysalt"
-iterations = 15000
+# iterations = 15000
+# FIXME: iteartion count should be 15000, this is just for debug
+iterations = 1
 key_length = 48
 
 if len(sys.argv) != 3:
